@@ -1,0 +1,210 @@
+---
+title: Jetson AGX Xavier Development Kit
+description: NVIDIA® Jetson AGX Xavier™ sets a new bar for compute density, energy efficiency, and AI inferencing capabilities on edge devices. It's the next evolution in next-generation intelligent machines with end-to-end autonomous capabilities.
+date: 2022-09-24
+---
+
+#### Manufacturer Website: 
+**https://www.nvidia.com/en-in/autonomous-machines/embedded-systems/jetson-agx-xavier/**
+
+#### Jetson Xavier AGX OpenCL info:
+ ```shell
+ Device Name                                     Xavier
+  Device Vendor                                   NVIDIA Corporation
+  Device Vendor ID                                0x10de
+  Device Version                                  OpenCL 1.2 pocl HSTR: CUDA-sm_72
+  Driver Version                                  1.6
+  Device OpenCL C Version                         OpenCL C 1.2 pocl
+  Device Type                                     GPU
+  Device Profile                                  FULL_PROFILE
+  Device Available                                Yes
+  Compiler Available                              Yes
+  Linker Available                                Yes
+  Max compute units                               8
+  Max clock frequency                             1377MHz
+  Device Partition                                (core)
+Max number of sub-devices                     1
+Supported partition types                     None
+Supported affinity domains                    (n/a)
+  Max work item dimensions                        3
+  Max work item sizes                             1024x1024x64
+  Max work group size                             1024
+  Preferred work group size multiple              32
+  Preferred / native vector sizes
+char                                                 1 / 1
+short                                                1 / 1
+int                                                  1 / 1
+long                                                 1 / 1
+half                                                 0 / 0        (n/a)
+float                                                1 / 1
+double                                               1 / 1        (cl_khr_fp64)
+  Half-precision Floating-point support           (n/a)
+  Single-precision Floating-point support         (core)
+Denormals                                     Yes
+Infinity and NANs                             Yes
+Round to nearest                              Yes
+Round to zero                                 Yes
+Round to infinity                             Yes
+IEEE754-2008 fused multiply-add               Yes
+Support is emulated in software               No
+Correctly-rounded divide and sqrt operations  No
+  Double-precision Floating-point support         (cl_khr_fp64)
+Denormals                                     Yes
+Infinity and NANs                             Yes
+Round to nearest                              Yes
+Round to zero                                 Yes
+Round to infinity                             Yes
+IEEE754-2008 fused multiply-add               Yes
+Support is emulated in software               No
+  Address bits                                    64, Little-Endian
+  Global memory size                              33477574656 (31.18GiB)
+  Error Correction support                        No
+  Max memory allocation                           8369393664 (7.795GiB)
+  Unified memory for Host and Device              Yes
+  Minimum alignment for any data type             128 bytes
+  Alignment of base address                       4096 bits (512 bytes)
+  Global Memory cache type                        None
+  Image support                                   No
+  Local memory type                               Local
+  Local memory size                               49152 (48KiB)
+  Max number of constant args                     8
+  Max constant buffer size                        65536 (64KiB)
+  Max size of kernel argument                     1024
+  Queue properties
+Out-of-order execution                        No
+Profiling                                     Yes
+  Prefer user sync for interop                    Yes
+  Profiling timer resolution                      1ns
+  Execution capabilities
+Run OpenCL kernels                            Yes
+Run native kernels                            No
+  printf() buffer size                            16777216 (16MiB)
+  Built-in kernels                                (n/a)
+  Device Extensions                                cl_khr_byte_addressable_store
+cl_khr_global_int32_base_atomics \\ cl_khr_global_int32_extended_atomics \\ cl_khr_local_int32_base_atomics \\ cl_khr_local_int32_extended_atomics cl_khr_fp64 \\ cl_khr_int64_base_atomics cl_khr_int64_extended_atomics
+```
+  
+---
+
+#### GPU OpenCL performance:
+```shell
+  Platform: Portable Computing Language
+  Device: Xavier
+    Driver version  : 1.6 (Linux ARM64)
+    Compute units   : 8
+    Clock frequency : 1377 MHz
+
+    Global memory bandwidth (GBPS)
+      float   : 84.52
+      float2  : 107.46
+      float4  : 106.80
+      float8  : 107.15
+      float16 : 105.47
+
+    Single-precision compute (GFLOPS)
+      float   : 1355.57
+      float2  : 1403.25
+      float4  : 1398.78
+      float8  : 1394.55
+      float16 : 1384.85
+
+    No half precision support! Skipped
+
+    Double-precision compute (GFLOPS)
+      double   : 44.03
+      double2  : 43.96
+      double4  : 43.85
+      double8  : 43.57
+      double16 : 43.16
+
+    Integer compute (GIOPS)
+      int   : 1367.98
+      int2  : 1400.67
+      int4  : 1391.98
+      int8  : 1399.31
+      int16 : 1398.18
+
+    Integer compute Fast 24bit (GIOPS)
+      int   : 1367.96
+      int2  : 1400.73
+      int4  : 1392.01
+      int8  : 1399.45
+      int16 : 1398.25
+
+    Transfer bandwidth (GBPS)
+      enqueueWriteBuffer              : 8.07
+      enqueueReadBuffer               : 8.22
+      enqueueWriteBuffer non-blocking : 8.29
+      enqueueReadBuffer non-blocking  : 8.28
+      enqueueMapBuffer(for read)      : 23585.76
+        memcpy from mapped ptr        : 8.39
+      enqueueUnmap(after write)       : 13.49
+        memcpy to mapped ptr          : 8.38
+
+    Kernel launch latency : -30.71 us
+```
+
+---
+ 
+#### CPU openCL Performance:
+```shell
+    Platform: Portable Computing Language
+  Device: pthread-0x004
+    Driver version  : 1.7-pre master-0-g89af801e (Linux ARM64)
+    Compute units   : 8
+    Clock frequency : 2265 MHz
+
+Global memory bandwidth (GBPS)
+  float   : 14.73
+  float2  : 23.17
+  float4  : 21.41
+  float8  : 18.91
+  float16 : 16.47
+
+Single-precision compute (GFLOPS)
+  float   : 4.34
+  float2  : 8.56
+  float4  : 17.37
+  float8  : 33.49
+  float16 : 67.40
+
+Half-precision compute (GFLOPS)
+  half   : 4.36
+  half2  : 8.76
+  half4  : 16.92
+  half8  : 34.29
+  half16 : 67.78
+
+Double-precision compute (GFLOPS)
+  double   : 4.27
+  double2  : 8.37
+  double4  : 17.32
+  double8  : 34.20
+  double16 : 59.22
+
+Integer compute (GIOPS)
+  int   : 8.77
+  int2  : 23.35
+  int4  : 46.31
+  int8  : 86.20
+  int16 : 128.71
+
+Integer compute Fast 24bit (GIOPS)
+  int   : 8.77
+  int2  : 23.23
+  int4  : 46.33
+  int8  : 86.69
+  int16 : 131.30
+
+Transfer bandwidth (GBPS)
+  enqueueWriteBuffer              : 10.60
+  enqueueReadBuffer               : 10.42
+  enqueueWriteBuffer non-blocking : 10.61
+  enqueueReadBuffer non-blocking  : 10.60
+  enqueueMapBuffer(for read)      : 6.73
+    memcpy from mapped ptr        : 10.29
+  enqueueUnmap(after write)       : 10.22
+    memcpy to mapped ptr          : 10.22
+
+Kernel launch latency : 68.42 us
+```

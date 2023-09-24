@@ -1,0 +1,21 @@
+{
+    "index": {
+      "title": "Home",
+      "type": "page",
+      "theme": {
+        "typesetting": "article"
+      }
+    },
+    "guides": {
+      "title": "Guides",
+      "type": "page"
+    },
+    "notes": {
+      "title": "Notes",
+      "type": "page"
+    },
+    "about": {
+      "title": "About",
+      "type": "page"
+    }
+  }
