@@ -39,9 +39,9 @@ Your system will need to have the following.
 * python3 and pip
 * python libraries (`numpy`, `cv2`, `pillow`, etc.)
 
-feel free to install the python packages inside a virtual environment (`venv`), if you don't want to trash the system installed packages.
+Feel free to install the python packages inside a virtual environment (`venv`), if you don't want to trash the system installed packages.
 
-you can install this with 
+You also need to install the tflite_runtime, you can install this with 
 ```shell copy
 pip3 install --extra-index-url https://google-coral.github.io/py-repo/ tflite_runtime
 ```
@@ -61,15 +61,15 @@ for the ArmNN runtime you only need two main library files,
 
 Inside the unpacked folder, these particular files are symlinks to the actual file.
 
-for the above 23.08 release, 
+For the above 23.08 release, 
 ```
 libarmnn.so -> libarmnn.so.33
 libarmnnDelegate.so -> libarmnnDelegate.so.29 
 ```
 
-these will change over time, but you can always find out where the symlinks point to, and fetch the actual files.
+These will change over time, but you can always find out where the symlinks point to, and fetch the actual files.
 
-when you run your python program to leverage the delegates, you need to make sure these files are in the same location as the code.
+When you run your python program to leverage the delegates, you need to make sure these files are in the same location as the code.
 
 # Building the model.
 
@@ -79,7 +79,7 @@ Let's use this CNN model that predicts the digits from the popular MNIST dataset
 
 Check out the example at https://github.com/sravansenthiln1/armnn_tflite/tree/main/digit_recognize
 
-but if you just want to run the model out of simplicity, you can just use the [pre-trained model](https://github.com/sravansenthiln1/armnn_tflite/blob/main/digit_recognize/digit_recognize_28.tflite)
+But if you just want to run the model out of simplicity, you can just use the [pre-trained model](https://github.com/sravansenthiln1/armnn_tflite/blob/main/digit_recognize/digit_recognize_28.tflite)
 
 # Running the delegate
 
@@ -118,14 +118,14 @@ IMAGE_PATH = "./digit7.png"
 Let's make an image object from the png file using the pillow library, we are going to open it, 
 and make sure the size is the input 28x28 pixel size we want.
 
-we will also convert the image into a grayscale image, so it only has one data channel for the pixel.
+We will also convert the image into a grayscale image, so it only has one data channel for the pixel.
 ```python copy
 img = Image.open(IMAGE_PATH).resize((28, 28))
 img = img.convert("L")
 ```
 
 ### Load the delegate and create the interpreter
-load the tflite delegate file, and create a delegate object.
+Load the tflite delegate file, and create a delegate object.
 ```python copy
 armnn_delegate = tflite.load_delegate(
     library = DELEGATE_PATH,
@@ -136,7 +136,7 @@ armnn_delegate = tflite.load_delegate(
 )
 ```
 
-then create the interpreter object based on the input model which loads it on the delegate.
+After that, you can create the interpreter object based on the input model, which loads it on the delegate device.
 ```python copy
 interpreter = tflite.Interpreter(
     model_path = MODEL_PATH, 
@@ -144,7 +144,7 @@ interpreter = tflite.Interpreter(
 )
 ```
 
-and allocate the tensors in memory
+And allocate the tensors in memory
 ```python copy
 interpreter.allocate_tensors()
 ```
@@ -156,7 +156,7 @@ input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
 ```
 
-extract the data type from the details alone, this makes sure we provide the right data type to the model
+Extract the data type from the details alone, this makes sure we provide the right data type to the model
 and know what kind of data the model will provide on inference.
 ```python copy
 input_type = input_details[0]['dtype']
@@ -168,30 +168,30 @@ We need to modify the input image to a numpy array which we can feed into the in
 this numpy array must consist of the right data type and have the appropriate dimensions.
 let's follow the steps to do so.
 
-convert it to a numpy array first,
+Convert it to a numpy array first,
 ```python copy
 np_features = np.array(img)
 ```
 
-convert it into the right data type for the input,
+Convert it into the right data type for the input,
 ```python copy
 np_features = np_features.astype(input_type)
 ```
 
-right now the shape would be something like `(28,28)`
+Right now the shape would be something like `(28,28)`
 our required input should be of the shape `(1, 28, 28, 1)`
 
-add the a dimension in front of the first axis to make it `(1, 28, 28)`
+Add the a dimension in front of the first axis to make it `(1, 28, 28)`
 ```python copy
 np_features = np.expand_dims(np_features, axis=0)
 ```
 
-and add a dimension after the last axis to make it `(1, 28, 28, 1)`
+Also, Add a dimension after the last axis to make it `(1, 28, 28, 1)`
 ```python copy
 np_features = np.expand_dims(np_features, axis=-1)
 ```
 
-you can check the current shape
+You can check the current shape
 ```python copy
 print(np_features.shape)
 ```
@@ -202,7 +202,7 @@ Now we can feed the input as the input tensor.
 interpreter.set_tensor(input_details[0]['index'], np_features)
 ```
 
-launch the interpreter to invoke inference
+Launch the interpreter to invoke inference
 ```python copy
 interpreter.invoke()
 ```
@@ -213,7 +213,7 @@ output = interpreter.get_tensor(output_details[0]['index'])
 ```
 
 ### Obtain the results
-the output is a tensor which spans the last layer, which is per digit confidence level, as to what the input image shows the digit to be.
+The output is a tensor which spans the last layer, which is per digit confidence level, as to what the input image shows the digit to be.
 grab the highest confidence value and print its index to know which digit it is.
 ```python copy
 prediction = np.argmax(output.astype(output_type)[0])
@@ -222,11 +222,11 @@ print('Predicted digit: ', prediction)
 
 </Steps>
 
-Remember the model, delegate library, and image files should be in the same path as this script
+Remember the model, delegate library, and image files should be in the same path as this script.
 
 # Example run
 
-here is an example running on the Khadas Edge2,
+here is an example running on the [Khadas Edge2](https://www.khadas.com/edge2),
 ```shell
 Info: ArmNN v33.0.0
 arm_release_ver of this libmali is 'g6p0-01eac0', rk_so_ver is '6'.
