@@ -1,0 +1,255 @@
+---
+title: Using the TFLite delegate
+description: Using the ArmNN Tflite delegate in python with the tflite.interpreter
+date: 2023-09-26
+---
+
+import { Tabs } from 'nextra/components'
+import { Callout } from "nextra-theme-docs";
+import { Cards, Card } from 'nextra/components'
+import { Steps } from 'nextra/components'
+import { FileTree } from 'nextra/components'
+
+# Introduction
+The ArmNN library makes use of TFLite's experimental delegate to provide a bridge for Neural-Network models to run on the delegate device
+
+The delegate consists of accelerated backends for the CPU (`CpuAcc`) and GPU (`GpuAcc`). 
+
+These delegates can make use of the computation power available through various ARM technologies like NEON-SIMD, the GPU compute units, etc.
+
+It seems like the TFLite operations and transpiled into OpenCL kernels which are then run on the devices, as seen here:
+https://github.com/ARM-software/ComputeLibrary/tree/main/compute_kernel_writer
+
+> Compute Kernel Writer is a tile-based, just-in-time code writer for deep learning and computer vision applications. 
+> This tool offers a C++ interface to allow developers to write functions without a return type (called "kernels") 
+> using their preferred programming language (at the moment, only OpenCL is supported). 
+> The library is specifically designed to be lightweight and to offer an intuitive API for efficient code writing.
+
+Each one has its own advantage and dissadvantages, more notes about this are at the end of this document.
+
+When these limitations hit, the ArmNN library switches to using the `CpuRef` backend reliant on XNNPACK, so it ensures all sections or your model can run.
+
+# Prequisites
+
+This guide will is in regards to running on any ARM64 linux platform.
+
+Your system will need to have the following.
+* Have the right mali gpu libs (`libmali.so`)
+* OpenCL compiler (`ocl-icd-opencl-dev`)
+* python3 and pip
+* python libraries (`numpy`, `cv2`, `pillow`, etc.)
+
+feel free to install the python packages inside a virtual environment (`venv`), if you don't want to trash the system installed packages.
+
+you can install this with 
+```shell copy
+pip3 install --extra-index-url https://google-coral.github.io/py-repo/ tflite_runtime
+```
+
+# Getting the ArmNN delegate libraries
+
+Download the packages from the ArmNN github packages and unpack them neatly into a folder called `libs`
+```shell copy
+wget -O ArmNN-aarch64.tgz https://github.com/ARM-software/armnn/releases/download/v23.08/ArmNN-linux-aarch64.tar.gz
+mkdir ArmNN-aarch64
+tar -xvf ArmNN-aarch64.tgz -C libs
+```
+
+for the ArmNN runtime you only need two main library files, 
+* libarmnn.so
+* libarmnnDelegate.so
+
+Inside the unpacked folder, these particular files are symlinks to the actual file.
+
+for the above 23.08 release, 
+```
+libarmnn.so -> libarmnn.so.33
+libarmnnDelegate.so -> libarmnnDelegate.so.29 
+```
+
+these will change over time, but you can always find out where the symlinks point to, and fetch the actual files.
+
+when you run your python program to leverage the delegates, you need to make sure these files are in the same location as the code.
+
+# Building the model.
+
+Let's use this CNN model that predicts the digits from the popular MNIST dataset.
+
+![mnist digit](/guides/armnn/mnist.png)
+
+Check out the example at https://github.com/sravansenthiln1/armnn_tflite/tree/main/digit_recognize
+
+but if you just want to run the model out of simplicity, you can just use the [pre-trained model](https://github.com/sravansenthiln1/armnn_tflite/blob/main/digit_recognize/digit_recognize_28.tflite)
+
+# Running the delegate
+
+Let's run through the example script and see what each part does.
+
+<Steps>
+### First import the essential libraries.
+```python copy
+import numpy as np
+import tflite_runtime.interpreter as tflite
+from PIL import Image
+```
+
+### Define the file paths
+We need to define our backends, I'm going to be using the `CpuAcc` backend and set `CpuRef` as the fallback runtime.
+```python copy
+BACKENDS = 'CpuAcc,CpuRef'
+```
+
+Set the path to the runtime delegate, All these paths are POSIX relative paths.
+```python copy
+DELEGATE_PATH = "./libarmnnDelegate.so.29"
+```
+
+Set the path to the tflite model.
+```python copy
+MODEL_PATH = "./digit_recognize_28.tflite"
+```
+
+Finally define the input image we want to test.
+```python copy
+IMAGE_PATH = "./digit7.png"
+```
+
+### Create the image object
+Let's make an image object from the png file using the pillow library, we are going to open it, 
+and make sure the size is the input 28x28 pixel size we want.
+
+we will also convert the image into a grayscale image, so it only has one data channel for the pixel.
+```python copy
+img = Image.open(IMAGE_PATH).resize((28, 28))
+img = img.convert("L")
+```
+
+### Load the delegate and create the interpreter
+load the tflite delegate file, and create a delegate object.
+```python copy
+armnn_delegate = tflite.load_delegate(
+    library = DELEGATE_PATH,
+    options = {
+        "backends":BACKENDS, 
+        "logging-severity": "info"
+    }
+)
+```
+
+then create the interpreter object based on the input model which loads it on the delegate.
+```python copy
+interpreter = tflite.Interpreter(
+    model_path = MODEL_PATH, 
+    experimental_delegates = [armnn_delegate]
+)
+```
+
+and allocate the tensors in memory
+```python copy
+interpreter.allocate_tensors()
+```
+
+### Get the input and output parameters
+We need to know the input and output details so we can provide data in the right dimensions and data types.
+```python copy
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+```
+
+extract the data type from the details alone, this makes sure we provide the right data type to the model
+and know what kind of data the model will provide on inference.
+```python copy
+input_type = input_details[0]['dtype']
+output_type = output_details[0]['dtype']
+```
+
+### Convert the input tensor data
+We need to modify the input image to a numpy array which we can feed into the interpreter, 
+this numpy array must consist of the right data type and have the appropriate dimensions.
+let's follow the steps to do so.
+
+convert it to a numpy array first,
+```python copy
+np_features = np.array(img)
+```
+
+convert it into the right data type for the input,
+```python copy
+np_features = np_features.astype(input_type)
+```
+
+right now the shape would be something like `(28,28)`
+our required input should be of the shape `(1, 28, 28, 1)`
+
+add the a dimension in front of the first axis to make it `(1, 28, 28)`
+```python copy
+np_features = np.expand_dims(np_features, axis=0)
+```
+
+and add a dimension after the last axis to make it `(1, 28, 28, 1)`
+```python copy
+np_features = np.expand_dims(np_features, axis=-1)
+```
+
+you can check the current shape
+```python copy
+print(np_features.shape)
+```
+
+### Set the inputs and run inference
+Now we can feed the input as the input tensor.
+```python copy
+interpreter.set_tensor(input_details[0]['index'], np_features)
+```
+
+launch the interpreter to invoke inference
+```python copy
+interpreter.invoke()
+```
+
+After this you can copy the result from the result tensor
+```python copy
+output = interpreter.get_tensor(output_details[0]['index'])
+```
+
+### Obtain the results
+the output is a tensor which spans the last layer, which is per digit confidence level, as to what the input image shows the digit to be.
+grab the highest confidence value and print its index to know which digit it is.
+```python copy
+prediction = np.argmax(output.astype(output_type)[0])
+print('Predicted digit: ', prediction)
+```
+
+</Steps>
+
+Remember the model, delegate library, and image files should be in the same path as this script
+
+# Example run
+
+here is an example running on the Khadas Edge2,
+```shell
+Info: ArmNN v33.0.0
+arm_release_ver of this libmali is 'g6p0-01eac0', rk_so_ver is '6'.
+Info: Initialization time: 6.06 ms.
+INFO: TfLiteArmnnDelegate: Created TfLite ArmNN delegate.
+Info: ArmnnSubgraph creation
+Info: Parse nodes to ArmNN time: 0.09 ms
+Info: Optimize ArmnnSubgraph time: 0.49 ms
+Info: Load ArmnnSubgraph time: 0.28 ms
+Info: Overall ArmnnSubgraph creation time: 0.97 ms
+ 
+Info: Execution time: 0.51 ms.
+Predicted digit:  7
+Info: Shutdown time: 1.17 ms.
+```
+
+Not bad, the inference runs pretty fast.
+
+# Notes:
+Here are some of the notes i've taken when it comes to optimally running a tflite model using this delegate
+
+* For the GPU, the kernel compilation takes time, and it can be observed that this creates a "long" startup time before kernels can be executed.
+* Certain operations aren't seemed to not be supported, such as "fully connected" or "Dense" layers, as it does warn us. The work around is that
+the kernels are executed in a runtime priority. so it will always be able to run on the `CpuRef` backend.
+* For older OpenCL versions, mixed work group sizes are not supported and unfortunately this makes a lot of kernels unable to run, it is a limitation only addressable with
+the latest Cl Drivers, 2.1 or newer.
