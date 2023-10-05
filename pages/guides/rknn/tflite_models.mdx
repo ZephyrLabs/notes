@@ -1,0 +1,27 @@
+---
+title: Running TFLite models with RKNN2
+description: Running TFLite models with Rockchip's RKNN2 platform
+date: 2023-09-28
+---
+
+import { Tabs } from 'nextra/components'
+import { Callout } from "nextra-theme-docs";
+import { Cards, Card } from 'nextra/components'
+import { Steps } from 'nextra/components'
+import { FileTree } from 'nextra/components'
+
+# Introduction
+RKNN2 is Rockchip's software suite to utilize the NPU on their new device platforms like the RK3588 and RK3566.
+
+The NPU doesn't directly run models as is, you need to convert them into the custom `.rknn` format.
+
+To do so, there is the RKNN-Toolkit2 which lets you analyze, quantize, convert and see how the model would run on the NPU layer wise.
+
+# Prequisites
+
+This guide is a look into how you can convert and run some basic TFLite models, it targets the following platforms
+* RK3566/RK3568 (3.0 TOPs NPU)
+* RK3588/RK3588S (6.0 TOPs NPU)
+
+You can check out https://github.com/sravansenthiln1/rknn_tflite for the example code and other details.
+
