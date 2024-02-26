@@ -115,3 +115,26 @@ print("Inference in: ", (en - st) * 1000, "ms" )
 print("predicts: ", np.argmax(output))
 ```
 </Steps>
+
+Remember the model, and image files should be in the same path as this script.
+
+# Example run
+
+here is an example running on the [Khadas Edge2](https://www.khadas.com/edge2),
+
+```shell
+--> Load RKNN model
+done
+--> Init runtime environment
+I RKNN: [08:25:37.584] RKNN Runtime Information: librknnrt version: 1.5.2 (c6b7b351a@2023-08-23T15:28:22)
+I RKNN: [08:25:37.584] RKNN Driver Information: version: 0.7.2
+W RKNN: [08:25:37.584] Current driver version: 0.7.2, recommend to upgrade the driver to the new version: >= 0.8.8
+I RKNN: [08:25:37.584] RKNN Model Information: version: 6, toolkit version: 1.5.2+b642f30c(compiler version: 1.5.2 (c6b7b351a@2023-08-23T07:39:01)), target: RKNPU v2, target platform: rk3588, framework name: TFLite, framework layout: NHWC, model inference type: static_shape
+done
+Inference in:  0.6785392761230469 ms
+predicts:  7
+```
+
+# Notes:
+To do any optimization on the model with the [conversion step](/guides/rknn/tflite_conversion.mdx), you'll need to specify a sample input in the form of
+an sample image `.png`, or `.jpg` or `.npy` file.
