@@ -20,8 +20,98 @@ To do so, there is the RKNN-Toolkit2 which lets you analyze, quantize, convert a
 # Prequisites
 
 This guide is a look into how you can convert and run some basic TFLite models, it targets the following platforms
-* RK3566/RK3568 (3.0 TOPs NPU)
+* RK3566/RK3568 (1.0 TOPs NPU)
 * RK3588/RK3588S (6.0 TOPs NPU)
 
 You can check out https://github.com/sravansenthiln1/rknn_tflite for the example code and other details.
 
+# Running an example model
+Here's an example running the sample CNN model that predicts digits from the popular MNIST dataset.
+
+![mnist digit](/guides/armnn/mnist.png)
+
+The sample resides at https://github.com/sravansenthiln1/rknn_tflite/tree/main/digit_recognize
+
+and has the pre-trained and converted model to test.
+
+Here's the run through of the code running the inference
+
+<Steps>
+### Importing our essential libraries
+```python copy
+import numpy as np
+from PIL import Image
+import time
+
+from rknnlite.api import RKNNLite
+```
+
+### Defining the file paths
+we have to define the file paths for things such as the model and input.
+
+Set the path to the model
+```python copy
+MODEL_PATH = "./digit_recognize_28.rknn"
+```
+
+Set the path to the input image
+```python copy
+IMAGE_PATH = "./digit7.png"
+```
+
+### Creating a RKNNlite handle
+Create a class instance for interacting with RKNN
+```python copy
+rknn_lite = RKNNLite()
+```
+
+### Load the RKNN model
+Load the RKNN model using the previously created RKNNLite instance
+```python copy
+ret = rknn_lite.load_rknn(MODEL_PATH)
+if ret != 0:
+    print('Load RKNN model failed')
+    exit(ret)
+print('done')
+```
+### Load the image Object
+Load the input image specified with the path we set
+```python copy
+img = Image.open(IMAGE_PATH)
+img = img.convert("L")
+img = np.expand_dims(img, 0)
+```
+
+### Initialize RKNNLite
+Start up the NPU runtime libraries
+```python copy
+print('--> Init runtime environment')
+ret = rknn_lite.init_runtime()
+if ret != 0:
+    print('Init runtime environment failed!')
+    exit(ret)
+print('done')
+```
+
+### Add extra outer dimension
+RKNN supports batch processing, so we have to encapsulate the image object within another dimension
+```python copy
+img = np.array([img])
+```
+
+### Invoke the inference
+Invoke the inference call and process all the input samples
+```python copy
+st = time.time()
+output = rknn_lite.inference(inputs=[img])
+en = time.time()
+```
+
+### Print the inferenced output and some time statistics
+The time statistic is simply a start stop time difference, while the inference prediction 
+is the index of the highest prediction confidence.
+```python copy
+print("Inference in: ", (en - st) * 1000, "ms" )
+print("predicts: ", np.argmax(output))
+```
+</Steps>

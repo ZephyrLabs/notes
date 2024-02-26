@@ -14,6 +14,10 @@
       "title": "Notes",
       "type": "page"
     },
+    "blog": {
+      "title": "Blog",
+      "type": "page"
+    },
     "about": {
       "title": "About",
       "type": "page"

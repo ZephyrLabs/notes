@@ -1,0 +1,156 @@
+---
+title: Converting TFLite models with RKNN2
+description: Converting TFLite models for Rockchip's RKNN2 platform
+date: 2024-02-26
+---
+
+import { Tabs } from 'nextra/components'
+import { Callout } from "nextra-theme-docs";
+import { Cards, Card } from 'nextra/components'
+import { Steps } from 'nextra/components'
+import { FileTree } from 'nextra/components'
+
+# Introduction
+RKNN2 is Rockchip's software suite to utilize the NPU on their new device platforms like the RK3588 and RK3566.
+
+The NPU doesn't directly run models as is, you need to convert them into the custom `.rknn` format.
+
+To do so, there is the RKNN-Toolkit2 which lets you analyze, quantize, convert and see how the model would run on the NPU layer wise.
+
+# Prequisites
+
+This guide is a look into how you can convert and run some basic TFLite models, it targets the following platforms
+* **RK3566** / **RK3568** (1.0 TOPs NPU)
+* **RK3588** / **RK3588S** (6.0 TOPs NPU)
+
+The platform should also be running 64 bit Linux firmware.
+
+Your system will need to have the following to **convert** models:
+* A x86/64 machine, running Ubuntu 22.04/20.04/18.04
+* python3 and pip
+* python libraries (`rknn_toolkit2` etc.)
+
+Feel free to install the python packages inside a virtual environment (`venv`), if you don't want to trash the system installed packages.
+
+Your system will need to have the following to **run** models:
+* python3 and pip
+* python libraries (`rknn_toolkit_lite2`, `numpy`, `cv2`, `pillow`, etc.)
+* Have the right rknn libs (`librknnrt.so`)
+
+# Converting models to RKNN
+<Steps>
+### Install pip
+```shell
+sudo apt-get install python3-pip
+```
+
+### Clone the examples repository
+```shell copy
+git clone https://github.com/sravansenthiln1/rknn_tflite
+cd rknn_tflite
+```
+
+### Get the Rockchip NPU tools
+```shell copy
+git clone https://github.com/rockchip-linux/rknn-toolkit2
+cd rknn-toolkit2
+git checkout b25dadacc24b88eb7dfcaa47c9c525ecca89b319
+```
+
+### Find the appropriate python version
+```shell copy
+python3 --version
+```
+
+and run the command accordingly
+
+| python version | command |
+|---|---|
+| 3.11 | `version=cp311` |
+| 3.10 | `version=cp310` |
+| 3.9 | `version=cp39` |
+| 3.8 | `version=cp38` |
+| 3.7 | `version=cp37` |
+| 3.6 | `version=cp36` |
+
+### Install the requirements and the toolkit 
+```shell copy
+pip3 install -r rknn-toolkit2/packages/requirements_$version-*.txt
+pip3 install rknn-toolkit2/packages/rknn_toolkit2-*-$version-$version-linux_x86_64.whl
+cd ../
+```
+
+### Downloading the script
+On your host workspace, get the script in the directory of your model:
+```shell copy
+wget https://raw.githubusercontent.com/sravansenthiln1/rknn_tflite/main/convert.py
+```
+
+### Convert the model
+To convert a file such as model.tflite, run
+```shell
+python3 convert.py model
+```
+
+Once converted, you can copy the `model.rknn` file over to your board to run inference
+
+<Callout type="info">
+The script doesn't optimize the model weights for RKNN, to maintain the original model characteristics.
+</Callout>
+</Steps>
+
+<Callout>
+You can modify the optimization and target platform variables in the script accordingly, 
+
+```python copy
+rknn.config(target_platform='rk3588s', optimization_level=0)
+```
+
+the target_platform is your device soc, such as `rk3588`, `rk3566`, `rv1103` etc.
+the optimization_level is the RKNN optimization, where `0` is model as is converted, and `2` is the maximum optimization where weights can be quantized.
+</Callout>
+
+# Setting up RKNN on target devices
+<Steps>
+### Install pip
+```shell
+sudo apt-get install python3-pip
+```
+
+### Install the necessary python packages
+```shell
+pip3 install numpy pillow opencv-python librosa sounddevice
+```
+
+### Get the Rockchip NPU tools
+```shell
+git clone https://github.com/rockchip-linux/rknn-toolkit2
+cd rknn-toolkit2
+git checkout b25dadacc24b88eb7dfcaa47c9c525ecca89b319
+```
+
+### Find the system python version
+```
+python3 --version
+```
+and run the command accordingly
+| python version | command |
+|---|---|
+| 3.11 | `version=cp311` |
+| 3.10 | `version=cp310` |
+| 3.9 | `version=cp39` |
+| 3.8 | `version=cp38` |
+| 3.7 | `version=cp37` |
+| 3.6 | `version=cp36` |
+
+### Install the appropriate toolkit wheel
+```shell
+pip3 install rknn_toolkit_lite2/packages/rknn_toolkit_lite2-*-$version-$version-linux_aarch64.whl
+```
+
+### Copy the runtime library
+```shell
+sudo cp rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so /usr/lib/
+cd ../
+```
+</Steps>
