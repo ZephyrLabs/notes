@@ -1,5 +1,8 @@
 {
     "index": {
-      "title": "Blog"
+      "title": "Blog",
+      "theme": {
+        "sidebar": false
     }
   }
+}

@@ -1,0 +1,121 @@
+---
+title: RTSP Streaming on the Khadas Edge2
+description: A how-to on streaming a video stream from the imx415 camera over rtsp protocol
+date: 2024-05-28
+---
+
+import { Tabs } from 'nextra/components'
+import { Callout } from "nextra-theme-docs";
+import { Cards, Card } from 'nextra/components'
+import { Steps } from 'nextra/components'
+import { FileTree } from 'nextra/components'
+
+# RTSP Streaming on the Khadas Edge2
+
+This is a small experiment trying to use the RTSP protocol
+to stream camera footage from the Khadas Edge2.
+
+# Prequisites
+
+Considering you are on a debian based platform, you'll need to make sure your device has `gstreamer` 
+installed with the necessary rockchip-mpp plugins.
+
+To make the most of the device's streaming capability, try connecting to the device to a **802.11 ac/ax** capable router.
+In my simple testing **802.11b/g/n** just wasn't able to keep up with the latency at higher resolutions.
+
+First, install the gstreamer plugins for RTSP sink:
+```shell copy
+sudo apt install libgstrtspserver-1.0-0 gstreamer1.0-rtsp
+```
+
+Then, get the the RTSP server:
+```shell copy
+wget https://github.com/bluenviron/mediamtx/releases/download/v1.8.2/mediamtx_v1.8.2_linux_arm64v8.tar.gz
+tar xvf mediamtx_v1.8.2_linux_arm64v8.tar.gz
+```
+
+# Running the RTSP server
+Launch an instance of the RTSP server in the background,
+```shell copy
+./mediamtx & 
+```
+
+You should be presented with some info regarding to streaming the port numbers for streaming.
+```shell
+zephyr@onyx:~$ ./mediamtx &
+[1] 1303
+zephyr@onyx:~$ 2024/05/28 11:47:53 INF MediaMTX v1.8.2
+2024/05/28 11:47:53 INF configuration loaded from /home/zephyr/mediamtx.yml
+2024/05/28 11:47:53 INF [RTSP] listener opened on :8554 (TCP), :8000 (UDP/RTP), :8001 (UDP/RTCP)
+2024/05/28 11:47:53 INF [RTMP] listener opened on :1935
+2024/05/28 11:47:53 INF [HLS] listener opened on :8888
+2024/05/28 11:47:53 INF [WebRTC] listener opened on :8889 (HTTP), :8189 (ICE/UDP)
+2024/05/28 11:47:53 INF [SRT] listener opened on :8890 (UDP)
+```
+
+<Callout type="info">
+You will need to run the server in the background in each shell session when running the streaming setup.
+</Callout>
+
+# Constructing the GStreamer Pipeline
+
+The most basic pipeline you can use to stream video from the device would be to capture the video
+from any of the camera devices, in my case I'm using the `IMX415` camera
+connected to the `CAM1` port (`/dev/video42`), 
+```shell
+v4l2src device=/dev/video42 io-mode=dmabuf
+```
+
+and encoding the video using the H.264 encoder 
+```shell
+mpph264enc ! h264parse
+```
+
+and handing it off to the RTSP server.
+```shell 
+rtspclientsink location=rtsp://localhost:8554/test
+```
+
+Here the `/test` is just a testing node, you could rename this to something more appropriate like `/camera`,
+but for the sake of this example we will just use `/test`
+
+thus giving us:
+```shell copy
+gst-launch-1.0 v4l2src device=/dev/video42 io-mode=dmabuf ! \
+    mpph264enc ! h264parse ! \
+    rtspclientsink location=rtsp://localhost:8554/test
+```
+
+You can view the stream by using another computer on the network using `ffplay`
+
+```shell copy
+ffplay -i rtsp://< device ip_address >:8554/test
+```
+
+However we can build upon this pipeline and make it a bit more optimized for bandwidth 
+First by which, is switching over to HEVC/H.265 encoding, which uses `mpph265enc` in the pipeline.
+
+```shell copy
+gst-launch-1.0 v4l2src device=/dev/video42 io-mode=dmabuf ! \
+    mpph265enc ! h265parse ! \
+    rtspclientsink location=rtsp://localhost:8554/test
+```
+
+We can also resize the video before transmitting, I reduced the resolution to around 720p (1280x720)
+and encoded with h.265 to obtain the most optimal balance of video quality with low packet loss/video artifacting.
+
+```shell copy
+gst-launch-1.0 v4l2src device=/dev/video42 io-mode=dmabuf ! \
+    video/x-raw,format=NV21,width=1280,height=720 ! \
+    mpph265enc ! h265parse ! \
+    rtspclientsink location=rtsp://localhost:8554/test
+```
+
+# Result
+
+I was able to stream it across a 802.11ac router as well as over a hotspot setup 
+where the Edge2 created a wireless network to which I connected my computer to.
+
+Overall this is a pretty good setup to get a seamless video stream from the Edge2 but the latency
+isn't doing any favors when I'm interesting in something like FPV streaming over wifi, I will probably
+have to look into other methods that are better for that sort of application.
