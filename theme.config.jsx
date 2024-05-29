@@ -28,7 +28,7 @@ export default {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="ZephyrLabs Notes" />
         <meta name="twitter:description" content="This is my collection of notes and documentation" />
-        <meta name="twitter:image" content="http://zephyrlabs-notes.vercel.app/public/images/social-preview.png" />
+        <meta name="twitter:image" content="http://zephyrlabs-notes.vercel.app/images/social-preview.png" />
       </>
     ),
     useNextSeoProps() {
