@@ -20,8 +20,15 @@ export default {
     head: (
       <>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta property="og:title" content="Notes" />
-        <meta property="og:description" content="ZephyrLabs Notes" />
+        <meta property="og:title" content="ZephyrLabs Notes" />
+        <meta property="og:description" content="This is my collection of notes and documentation" />
+        <meta property="og:image" content="http://zephyrlabs-notes.vercel.app/social-preview.png" />
+        <meta property="og:url" content="https://zephyrlabs-notes.vercel.app" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="ZephyrLabs Notes" />
+        <meta name="twitter:description" content="This is my collection of notes and documentation" />
+        <meta name="twitter:image" content="http://zephyrlabs-notes.vercel.app/social-preview.png" />
       </>
     ),
     useNextSeoProps() {

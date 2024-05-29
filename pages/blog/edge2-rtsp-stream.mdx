@@ -2,6 +2,7 @@
 title: RTSP Streaming on the Khadas Edge2
 description: A how-to on streaming a video stream from the imx415 camera over rtsp protocol
 date: 2024-05-28
+image: /zlogo.png
 ---
 
 import { Tabs } from 'nextra/components'
@@ -92,7 +93,7 @@ You can view the stream by using another computer on the network using `ffplay`
 ffplay -i rtsp://< device ip_address >:8554/test
 ```
 
-However we can build upon this pipeline and make it a bit more optimized for bandwidth 
+However we can build upon this pipeline and make it a bit more optimized for bandwidth, 
 First by which, is switching over to HEVC/H.265 encoding, which uses `mpph265enc` in the pipeline.
 
 ```shell copy
