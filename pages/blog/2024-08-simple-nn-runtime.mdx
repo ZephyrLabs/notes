@@ -1,0 +1,140 @@
+---
+title: Experiments building a simple NN runtime
+description: A walkthrough of trying to build my own simple neural network runtime
+date: 2024-08-09
+image: /zlogo.png
+---
+
+import { Tabs } from 'nextra/components'
+import { Callout } from "nextra-theme-docs";
+import { Cards, Card } from 'nextra/components'
+import { Steps } from 'nextra/components'
+import { FileTree } from 'nextra/components'
+
+# Experiments building a simple NN runtime
+The scope of building my own neural network runtime was purely for educational purposes
+so I could understand how various BLAS (Basic Linear Algebra subprograms) kernels could be implemented in programming.
+
+Soon enough I took a deeper delve into understanding how more advanced hardware like NPUs were developed 
+for the the sole purpose of running neural networks faster.
+
+I won't go into too much depth about how to handwrite the code for the runtime, 
+here I just want to showcase how I progressed with my implementations of simple neural network runtimes.
+
+## Types of Subprograms
+
+In terms of basic linear subprograms, there are only a very few:
+
+**Level 1**:
+| **BLAS subprograms**        | **Semantic**                                     | **Arithmetic ops.**   | **Mem. ops.** | **Ratio** |
+|-----------------------------|--------------------------------------------------|-----------------------|---------------|-----------|
+| $ Vector\ Addition $        | $ y_i = x_i + y_i $                              | $ n $                 | $ 3n $        | $ 1:3  $  |
+| $ Vector\ Scaling $         | $ x_i = s x_i $                                  | $ n $                 | $ 2n $        | $ 1:2  $  |
+| $ Dot\ Product $            | $ s = \sum_{i=0}^{n-1} x_i y_i $                 | $ 2n $                | $ 2n $        | $ 2:2  $  |
+
+**Level 2**:
+| **BLAS subprograms**              | **Semantic**                                     | **Arithmetic ops.**   | **Mem. ops.** | **Ratio** |
+|-----------------------------------|--------------------------------------------------|-----------------------|---------------|-----------|
+| $ Matrix-Vector\ Multiplication $ | $ y_i = y_i + \sum_{j=0}^{n-1} a_{ij} x_j $      | $ 2n^2 + 2n $         | $ n^2 + 3n $  | $ 2:1 $   |
+| $ Rank-One\ Update $              | $ a_{ij} = a_{ij} + x_i y_j $                    | $ 2n^2 $              | $ 2n^2 + 2n $ | $ 2:2 $   |
+
+**Level 3**:
+| **BLAS subprograms**              | **Semantic**                                         | **Arithmetic ops.**   | **Mem. ops.** | **Ratio** |
+|-----------------------------------|------------------------------------------------------|-----------------------|---------------|-----------|
+| $ Matrix-Matrix\ Multiplication $ | $ c_{ij} = c_{ij} + \sum_{k=0}^{n-1} a_{ik} b_{kj} $ | $ 2n^3 + n^2 $        | $ 4n^2 $      | $ n:2 $   |
+
+On top of this, there are also things like activation functions which are implemented in the model, for simplicity I used `ReLU`
+
+| **Activation function**           | **Semantic**              | **Arithmetic ops.**   | **Mem. ops.** | **Ratio** |
+|-----------------------------------|---------------------------|-----------------------|---------------|-----------|
+| $ ReLU $                          | $ y_{i} = max(0, x_{i}) $ | $ n $                 | $ 2n $        | $ 1:2  $  |
+
+
+## Implementing the runtime
+Instead of making a vanilla implementation, I tried optimizing it for particular platforms
+
+* for a microcontroller, particularly the RPi Pico.
+* for a Linux based ARM system, check out the project.
+* for compute devices that run OpenCL such as embedded GPUs.
+
+### The RPi Pico Implementation:
+The [ZephyrLabs/pico-ml](https://github.com/ZephyrLabs/pico-ml/) project is a implementation of the simple runtime with the basic BLAS functionalities
+but also has a couple tweaks implemented to see how it's performance would improve, particularly:
+
+    * [Implementing multiprocessing](https://github.com/ZephyrLabs/pico-ml/blob/main/src/blas_multicore.c) to make use of both available MCU cores.
+    * A pointer manipulation hack to [reduce zero computation](https://github.com/ZephyrLabs/pico-ml/blob/main/src/blas.c#L60) for a platform not natively supporting floating point computation.
+
+
+```
+Sine Model - Hard-encoded BLAS accelerated
+input: 1.570500 radians
+L1 exec time: 83 us
+L2 exec time: 185 us
+L3 exec time: 12 us
+output: 0.987339
+```
+
+**Total Execution Time:** 280 us
+
+### The ARM Implmentation:
+The [ZephyrLabs/arm-neon-nn](https://github.com/ZephyrLabs/arm-neon-nn) project is an implementation of the BLAS functionalities with ARM NEON Instrinsics
+for faster vector accelerated processing.
+
+**Running on a Khadas Edge2 - RK3588s - ARM Cortex-A A76 & A55**
+```
+Input: 1.570796
+Output: 0.987341
+
+Execution profiling
+Layer 1 Execution Time: 7292 ns
+Layer 2 Execution Time: 14875 ns
+Layer 3 Execution Time: 875 ns
+Total Time: 23042 ns
+```
+
+**Total Execution Time:** 23042 ns (or) 23.04 us
+
+### The OpenCL Implmentation:
+The [sravansenthiln1/opencl-demos - c++ - neural_network](https://github.com/sravansenthiln1/opencl-demos/tree/main/c++/neural_network) example is minimal implementation
+to run the model with OpenCL. The example targets using embedded GPUs in particular like ARM Mali Graphics which have shared system memory and allows for copy-less memory transfer
+between the CPU and the GPU.
+
+**Running on Khadas Edge2 - RK3588s - ARM Mali G610-MP4**
+```
+Fetched kernel source: 930 bytes
+arm_release_ver: g13p0-01eac0, rk_so_ver: 10
+Platform Name: ARM Platform
+Device Name: Mali-G610 r0p0
+Input value: 1.5708
+MatMul kernel created successfully
+Add kernel created successfully
+ReLU kernel created successfully
+output: 0.997709
+
+==== Execution Info ====
+=== Layer 1 ===
+Layer 1 MatMul: 0.0011371 ms
+Layer 1 Add: 0.0005248 ms
+Layer 1 ReLU: 0.0004956 ms
+Layer 1 elapsed time: 0.0021575 ms
+
+=== Layer 2 ===
+Layer 2 MatMul: 0.0016036 ms
+Layer 2 Add: 0.0004666 ms
+Layer 2 ReLU: 0.0004374 ms
+Layer 2 elapsed time: 0.0025076 ms
+
+=== Layer 3 ===
+Layer 3 MatMul: 0.0015453 ms
+Layer 3 Add: 0.0004082 ms
+Layer 3 elapsed time: 0.0019535 ms
+
+Total Inference time in: 0.0066186 ms
+```
+
+**Total Execution Time:** 0.0066186 ms (or) 6.04 us
+
+ 
+<Callout type="info" emoji="i">
+The model used among all the examples are not the same in terms of weights and is purely for representation purposes only.
+</Callout>
