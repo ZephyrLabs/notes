@@ -81,6 +81,8 @@ The [ZephyrLabs/arm-neon-nn](https://github.com/ZephyrLabs/arm-neon-nn) project 
 for faster vector accelerated processing.
 
 **Running on a Khadas Edge2 - RK3588s - ARM Cortex-A A76 & A55**
+
+On an A55 core:
 ```
 Input: 1.570796
 Output: 0.987341
@@ -93,6 +95,20 @@ Total Time: 23042 ns
 ```
 
 **Total Execution Time:** 23042 ns (or) 23.04 us
+
+On an A76 core:
+```
+Input: 1.570796
+Output: 0.987341
+
+Execution profiling
+Layer 1 Execution Time: 2041 ns
+Layer 2 Execution Time: 4375 ns
+Layer 3 Execution Time: 292 ns
+Total Time: 6708 ns
+```
+
+**Total Execution Time:** 6708 ns (or) 6.7 us
 
 ### The OpenCL Implmentation:
 The [sravansenthiln1/opencl-demos - c++ - neural_network](https://github.com/sravansenthiln1/opencl-demos/tree/main/c++/neural_network) example is minimal implementation
