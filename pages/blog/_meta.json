@@ -5,6 +5,12 @@
         "sidebar": false
     }
   },
+    "2025-12-edge2-dual-screen-cyberdeck": {
+    "title": "Accidentally building a dual-screen cyberdeck using the Edge2",
+    "theme": {
+      "sidebar": false
+    }
+  },
     "2024-05-edge2-rtsp-stream": {
     "title": "RTSP Streaming on the Khadas Edge2",
     "theme": {

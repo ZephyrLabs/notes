@@ -1,0 +1,80 @@
+---
+title: Accidentally building a dual-screen cyberdeck using the Edge2
+description: A walkthrough of how I built a dual-screen cyberdeck using the Edge2
+date: 2025-12-13
+image: /zlogo.png
+---
+
+import { Tabs } from 'nextra/components'
+import { Callout } from "nextra-theme-docs";
+import { Cards, Card } from 'nextra/components'
+import { Steps } from 'nextra/components'
+import { FileTree } from 'nextra/components'
+
+# Accidentally building a dual-screen cyberdeck using the Edge2
+Cyberdecks are arguably one of the coolest implementations of personal computing, offering the ability to customize the physical characteristics of one's personal computer to their liking.
+
+Recently when I was tinkering with the Edge2, I had a curious moment when going through the schematics of the Edge2 and was looking at the pin layout of the MIPI-DSI connectors.
+The Edge2's second DSI port (DSI-1) had the same pin layout as the VIM3's DSI port, This gave me the idea to try to run a secondary display off the DSI-1 port and eventually led to the creation of the idea of building this cyberdeck.
+
+## The Edge2's DSI port setup
+
+The [Edge2](https://www.khadas.com/edge2) basically has 2 independent MIPI-DSI port, one is exposed via a 40 pin connector, and another via a 30 pin connector.
+
+![MIPI DSI Connectors](/blog/2025-12/mipi-dsi-connectors.png)
+
+The 40 pin connector has additional pins for the I2C touch panel interface, whereas the 30 pin connector only has the MIPI-DSI lanes along with an I2C interface for the display controller
+
+Now, Khadas offers the [TS050](https://www.khadas.com/product-page/ts050-touchscreen), a 5-inch, 1080p IPS display as an accessory for the Edge2 and it comes with two different FFC cables, one has 40 pins (compatible with Edge2 / VIM4) and the other has 30 + 10 pins (compatible with VIM3).
+
+![FFC cables](/blog/2025-12/ffc-cable-comparison.png)
+
+The 30 pins of the old of the  30 + 10 pin FFC cable line up exactly with the 30 pins of the DSI-2 connector on the Edge2, albeit the extra 10 pins hang off the side, which means that particular display won't have a working touch panel.
+
+![Edge2 with FFC cables](/blog/2025-12/ffc-cables-on-edge2.png)
+
+Now this allowed me to electronically attach two TS050 displays to the Edge2, but for it to get recognized by the device itself, it would require a few device-tree modifications.
+
+* Enabling the backlight_mipi1 node for the second display / DSI-1,
+* Modifying the combo-phy routing, routing VP2 to DSI-0, and VP3 to DSI-1
+* Enabling the DSI-1 node itself and assigning it the previously enabled backlight_mipi1 node.
+
+With these modifications to the device-tree, the kernel identified the second display and was completely operational.
+
+![Dual Display Edge2](/blog/2025-12/dual-display-operation.jpg)
+
+More info about the software modifications to making this all come together is documented on my [khadas forum post](https://forum.khadas.com/t/edge2-dual-screen-portable-pc/23872)
+
+## Packaging it all into a cyberdeck
+
+Now was when I realised all of this could be neatly packaged into a clamshell-like case which could also be a neat little cyberdeck, so after a little CAD modelling this is what I arrived attach
+
+![Edge2 Clamshell Case](/blog/2025-12/edge2-case-cad-rotate.GIF)
+
+The primary features of the case design are:
+* Vents for easier device cooling
+* Easy access side-buttons of the Edge2 for power, function, reset. 
+* Friction-hinge to allow it to hold the upper display in a wide range of positions.
+* Desk stand to hold the cyberdeck at an ergonomic viewing angle on your desk. 
+
+## Assembling the cyberdeck
+
+The CAD model was 3D printed and with the help of some additional components like screws and tape to hold it all together
+
+![Edge2 Cybershell](/blog/2025-12/edge2-cyberdeck-asm.png)
+
+## Result
+
+![Edge2 Cybershell](/blog/2025-12/edge2-cyberdeck-1.png)
+
+I was very happy with the result and it is definitely a very usable little machine, I used an Edge2 pro which has 16 GB of ram and 64 GB of eMMC and
+It's very capable of running multiple apps, browser + terminal + more.
+
+The two 5-inch displays does make it look like a workstation for a hamster, or a Nintendo DS so it's definitely not the most comfortable personal computer
+but it's definitely compact, and packs a decent amount of computational power for everyday work.
+
+For those who want to recreate this cyberdeck: 
+* I had a writeup about the hardware assembly and software configuration on the [khadas forum post](https://forum.khadas.com/t/edge2-dual-screen-portable-pc/23872)
+* The 3D printed case files are available on printables 
+
+<iframe src="https://www.printables.com/embed/1171731" width="640" height="640" scrolling="no" frameborder="0"></iframe>

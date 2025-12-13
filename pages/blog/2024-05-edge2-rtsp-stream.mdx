@@ -11,12 +11,12 @@ import { Cards, Card } from 'nextra/components'
 import { Steps } from 'nextra/components'
 import { FileTree } from 'nextra/components'
 
-# RTSP Streaming on the Khadas Edge2
+## RTSP Streaming on the Khadas Edge2
 
 This is a small experiment trying to use the RTSP protocol
 to stream camera footage from the Khadas Edge2.
 
-# Prequisites
+## Prequisites
 
 Considering you are on a debian based platform, you'll need to make sure your device has `gstreamer` 
 installed with the necessary rockchip-mpp plugins.
@@ -58,7 +58,7 @@ zephyr@onyx:~$ 2024/05/28 11:47:53 INF MediaMTX v1.8.2
 You will need to run the server in the background in each shell session when running the streaming setup.
 </Callout>
 
-# Constructing the GStreamer Pipeline
+## Constructing the GStreamer Pipeline
 
 The most basic pipeline you can use to stream video from the device would be to capture the video
 from any of the camera devices, in my case I'm using the `IMX415` camera
@@ -112,7 +112,7 @@ gst-launch-1.0 v4l2src device=/dev/video42 io-mode=dmabuf ! \
     rtspclientsink location=rtsp://localhost:8554/test
 ```
 
-# Result
+## Result
 
 I was able to stream it across a 802.11ac router as well as over a hotspot setup 
 where the Edge2 created a wireless network to which I connected my computer to.
